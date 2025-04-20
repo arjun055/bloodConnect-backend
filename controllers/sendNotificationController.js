@@ -17,7 +17,7 @@ const getDistanceInKm = (lat1, lon1, lat2, lon2) => {
 };
 
 export const notifyDonors = async (req, res) => {
-  const { title, message, hospitalLat, hospitalLng, range } = req.body;
+  const { title, message, hospitalLat, hospitalLng, range, bloodType } = req.body;
 
   try {
     // Get all donors with valid subscriptions and location
@@ -26,12 +26,36 @@ export const notifyDonors = async (req, res) => {
       subscription: { $ne: null },
       latitude: { $exists: true },
       longitude: { $exists: true },
-    });
+    })
+    .populate({ path: "profileId", model: "Donor" })
+    .select("email latitude longitude profileId subscription");
 
     let eligibleDonors = [];
 
+    // if (range === "Everyone") {
+    //   eligibleDonors = allDonors;
+    // } else {
+    //   const maxRange = Number(range);
+    //   eligibleDonors = allDonors.filter((donor) => {
+    //     const distance = getDistanceInKm(
+    //       hospitalLat,
+    //       hospitalLng,
+    //       donor.latitude,
+    //       donor.longitude
+    //     );
+
+    //     const isWithinRange = range === "Everyone" || distance <= Number(range);
+    //     const isMatchingBloodType = bloodType === "Everyone" || ( donor.profileId && donor.profileId.bloodType === bloodType );
+    //     // return distance <= maxRange;
+    //     return isWithinRange && isMatchingBloodType;
+    //   });
+    // }
+
     if (range === "Everyone") {
-      eligibleDonors = allDonors;
+      eligibleDonors = allDonors.filter((donor) => {
+        const isMatchingBloodType = bloodType === "Everyone" || (donor.profileId && donor.profileId.bloodType === bloodType);
+        return isMatchingBloodType;
+      });
     } else {
       const maxRange = Number(range);
       eligibleDonors = allDonors.filter((donor) => {
@@ -41,9 +65,14 @@ export const notifyDonors = async (req, res) => {
           donor.latitude,
           donor.longitude
         );
-        return distance <= maxRange;
+    
+        const isWithinRange = distance <= maxRange;
+        const isMatchingBloodType = bloodType === "Everyone" || (donor.profileId && donor.profileId.bloodType === bloodType);
+    
+        return isWithinRange && isMatchingBloodType;
       });
     }
+    
 
     eligibleDonors.map((donor)=>{
       console.log(donor.email);
