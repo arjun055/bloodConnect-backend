@@ -1,0 +1,21 @@
+# Ignore node_modules folder
+node_modules/
+
+# Ignore environment variable file
+.env
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# OS-specific files
+.DS_Store
+
+# IDE files
+.vscode/
+.idea/
+
+# Build output (if you're using any bundlers like webpack or tools like Next.js)
+dist/
+build/
